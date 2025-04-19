@@ -1,11 +1,13 @@
 from django.shortcuts import render, get_object_or_404, reverse
 from django.views import generic
 from django.contrib import messages
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
 from .models import Post, Comment
 from .forms import CommentForm
 
-# Create your views here.
+
 class PostList(generic.ListView):
     queryset = Post.objects.filter(status=1)
     template_name = "blog/index.html"
@@ -15,17 +17,7 @@ class PostList(generic.ListView):
 def post_detail(request, slug):
     """
     Display an individual :model:`blog.Post`.
-
-    **Context**
-
-    ``post``
-        An instance of :model:`blog.Post`.
-
-    **Template:**
-
-    :template:`blog/post_detail.html`
     """
-
     queryset = Post.objects.filter(status=1)
     post = get_object_or_404(queryset, slug=slug)
     comments = post.comments.all().order_by("-created_on")
@@ -39,7 +31,8 @@ def post_detail(request, slug):
             comment.post = post
             comment.save()
             messages.add_message(
-                request, messages.SUCCESS,
+                request,
+                messages.SUCCESS,
                 'Comment submitted and awaiting approval'
             )
 
@@ -56,12 +49,12 @@ def post_detail(request, slug):
         },
     )
 
+
 def comment_edit(request, slug, comment_id):
     """
-    view to edit comments
+    View to edit comments
     """
     if request.method == "POST":
-
         queryset = Post.objects.filter(status=1)
         post = get_object_or_404(queryset, slug=slug)
         comment = get_object_or_404(Comment, pk=comment_id)
@@ -74,14 +67,18 @@ def comment_edit(request, slug, comment_id):
             comment.save()
             messages.add_message(request, messages.SUCCESS, 'Comment Updated!')
         else:
-            messages.add_message(request, messages.ERROR, 'Error updating comment!')
+            messages.add_message(
+                request,
+                messages.ERROR,
+                'Error updating comment!'
+            )
 
     return HttpResponseRedirect(reverse('post_detail', args=[slug]))
 
 
 def comment_delete(request, slug, comment_id):
     """
-    view to delete comment
+    View to delete comment
     """
     queryset = Post.objects.filter(status=1)
     post = get_object_or_404(queryset, slug=slug)
@@ -91,6 +88,37 @@ def comment_delete(request, slug, comment_id):
         comment.delete()
         messages.add_message(request, messages.SUCCESS, 'Comment deleted!')
     else:
-        messages.add_message(request, messages.ERROR, 'You can only delete your own comments!')
+        messages.add_message(
+            request,
+            messages.ERROR,
+            'You can only delete your own comments!'
+        )
 
     return HttpResponseRedirect(reverse('post_detail', args=[slug]))
+
+
+@csrf_exempt  # ⚠️ Only for demo use — replace with secure method in production
+def update_reaction(request):
+    if request.method == "POST" and request.user.is_authenticated:
+        comment_id = request.POST.get("comment_id")
+        action = request.POST.get("action")  # expects 'like' or 'dislike'
+
+        try:
+            comment = Comment.objects.get(pk=comment_id)
+
+            if action == "like":
+                comment.likes += 1
+            elif action == "dislike":
+                comment.dislikes += 1
+
+            comment.save()
+
+            return JsonResponse({
+                'likes': comment.likes,
+                'dislikes': comment.dislikes
+            })
+
+        except Comment.DoesNotExist:
+            return JsonResponse({'error': 'Comment not found'}, status=404)
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)

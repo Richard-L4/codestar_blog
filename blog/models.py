@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from cloudinary.models import CloudinaryField
 
-# Create your models here.
 STATUS = ((0, "Draft"), (1, "Published"))
 
 
@@ -23,7 +22,7 @@ class Post(models.Model):
         ordering = ["-created_on"]
 
     def __str__(self):
-        return f"{self.title} | written by {self.author}"  # ✅ Works correctly here
+        return f"{self.title} | written by {self.author}"
 
 
 class Comment(models.Model):
@@ -37,10 +36,14 @@ class Comment(models.Model):
     approved = models.BooleanField(default=False)
     created_on = models.DateTimeField(auto_now_add=True)
 
+    # 👍 Count of likes for this comment
+    likes = models.PositiveIntegerField(default=0)
+
+    # 👎 Count of dislikes for this comment
+    dislikes = models.PositiveIntegerField(default=0)
+
     class Meta:
         ordering = ["created_on"]
 
     def __str__(self):
-        return f"Comment  {self.author} by {self.post.title}"  
-
-
+        return f"Comment by {self.author} on '{self.post.title}'"
