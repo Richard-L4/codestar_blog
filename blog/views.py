@@ -2,7 +2,8 @@ from django.shortcuts import render, get_object_or_404, reverse
 from django.views import generic
 from django.contrib import messages
 from django.http import HttpResponseRedirect, JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_protect
+from django.contrib.auth.decorators import login_required
 
 from .models import Post, Comment
 from .forms import CommentForm
@@ -97,7 +98,8 @@ def comment_delete(request, slug, comment_id):
     return HttpResponseRedirect(reverse('post_detail', args=[slug]))
 
 
-@csrf_exempt  # ⚠️ Only for demo use — replace with secure method in production
+@login_required
+@csrf_protect
 def update_reaction(request):
     if request.method == "POST" and request.user.is_authenticated:
         comment_id = request.POST.get("comment_id")
