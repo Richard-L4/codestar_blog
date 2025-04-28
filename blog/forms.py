@@ -2,16 +2,23 @@ from django import forms
 from .models import Comment
 from allauth.account.forms import SignupForm
 
-# Form for blog comments
+# Blog comment form
 class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
         fields = ('body',)
 
-# Custom signup form for allauth (outside of CommentForm)
+# Custom signup form
 class CustomSignupForm(SignupForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Replace the help texts so there are no <ul> or <li> in them
-        self.fields['password1'].help_text = "Password must be at least 8 characters."
-        self.fields['password2'].help_text = "Enter the same password again to verify."
+
+        # Optional: Customize field labels (if you want to)
+        self.fields['username'].label = "Username"
+        self.fields['email'].label = "Email (optional)"
+        self.fields['password1'].label = "Password"
+        self.fields['password2'].label = "Password (again)"
+
+        # Optional: Remove allauth's default <ul><li> help texts if needed
+        self.fields['password1'].help_text = None
+        self.fields['password2'].help_text = None
