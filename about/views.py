@@ -29,21 +29,8 @@ def about_me(request):
             messages.add_message(
                 request,
                 messages.SUCCESS,
-                "Collaboration request received!
-                I endeavour to respond within 2 working days."
+                (
+                    "Collaboration request received!<br>"
+                    "I endeavour to respond within 2 working days."
+                )
             )
-
-    # Get the most recent About object based on update date
-    about = About.objects.all().order_by('-updated_on').first()
-
-    # Always return a fresh empty form in the context (even after POST)
-    collaborate_form = CollaborateForm()
-
-    return render(
-        request,
-        "about/about.html",
-        {
-            "about": about,
-            "collaborate_form": collaborate_form
-        },
-    )
